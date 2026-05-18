@@ -43,17 +43,13 @@ streamlit run app.py
 http://localhost:8501
 ```
 
-## Hugging Face Space
+## Live App
 
-```text
-https://theory-of-evrth-glcm-texture-explorer-app-b79293.streamlit.app/
-```
+[Open the deployed app](https://theory-of-evrth-glcm-texture-explorer-app-b79293.streamlit.app/)
 
-## Screenshot of the application
+## Screenshot
 
-```markdown
-![GLCM Texture Explorer demo](screenshots/screenshot.png)
-```
+![GLCM Texture Explorer demo](screenshots/Screenshot.png)
 
 ## Known Limitations
 
