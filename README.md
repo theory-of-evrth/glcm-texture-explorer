@@ -46,7 +46,7 @@ http://localhost:8501
 ## Hugging Face Space
 
 ```text
-TODO: https://huggingface.co/spaces/<username>/<space-name>
+https://theory-of-evrth-glcm-texture-explorer-app-b79293.streamlit.app/
 ```
 
 ## Screenshot of the application
