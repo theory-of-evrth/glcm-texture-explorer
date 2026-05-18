@@ -132,7 +132,7 @@ try:
 
     quantized_display = scale_quantized_for_display(quantized, levels)
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.subheader("Input grayscale image")
@@ -142,15 +142,16 @@ try:
         st.subheader("Quantized image")
         st.image(quantized_display, clamp=True, width="stretch")
 
-    st.subheader("GLCM heatmap")
+    with col3:
+        st.subheader("GLCM heatmap")
 
-    fig, ax = plt.subplots()
-    im = ax.imshow(glcm_matrix)
-    ax.set_xlabel("Neighbor gray level")
-    ax.set_ylabel("Reference gray level")
-    ax.set_title("Gray-Level Co-occurrence Matrix")
-    fig.colorbar(im, ax=ax)
-    st.pyplot(fig)
+        fig, ax = plt.subplots()
+        im = ax.imshow(glcm_matrix)
+        ax.set_xlabel("Neighbor gray level")
+        ax.set_ylabel("Reference gray level")
+        ax.set_title("Gray-Level Co-occurrence Matrix")
+        fig.colorbar(im, ax=ax)
+        st.pyplot(fig, width="stretch")
 
     st.subheader("Texture metrics")
 
