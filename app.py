@@ -1,5 +1,6 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from processing import load_image_as_gray, compute_glcm_features, scale_quantized_for_display
 
@@ -12,10 +13,83 @@ st.write(
     "by counting how often neighboring gray levels occur together."
 )
 
-uploaded_file = st.sidebar.file_uploader(
-    "Upload an image",
-    type=["png", "jpg", "jpeg"],
-)
+SAMPLE_IMAGE_DIR = Path(__file__).parent / "image samples"
+SAMPLE_IMAGE_TYPES = {".png", ".jpg", ".jpeg"}
+
+
+def find_sample_images():
+    if not SAMPLE_IMAGE_DIR.exists():
+        return []
+
+    return sorted(
+        path
+        for path in SAMPLE_IMAGE_DIR.iterdir()
+        if path.is_file() and path.suffix.lower() in SAMPLE_IMAGE_TYPES
+    )
+
+
+def describe_texture(features):
+    contrast = features["contrast"]
+    homogeneity = features["homogeneity"]
+    energy = features["energy"]
+    correlation = features["correlation"]
+
+    if contrast < 2:
+        contrast_text = "The low contrast suggests neighboring pixels usually have similar brightness, so the texture is fairly smooth."
+    elif contrast < 10:
+        contrast_text = "The moderate contrast points to visible local intensity changes without an extremely sharp or noisy texture."
+    else:
+        contrast_text = "The high contrast suggests strong local brightness changes, which often appear as edges, grain, or abrupt texture transitions."
+
+    if homogeneity > 0.7:
+        homogeneity_text = "High homogeneity reinforces that nearby pixels often fall into similar gray levels."
+    elif homogeneity > 0.4:
+        homogeneity_text = "The medium homogeneity suggests a mix of smooth regions and local variation."
+    else:
+        homogeneity_text = "Low homogeneity means neighboring gray levels are often different, so the texture is less locally uniform."
+
+    if energy > 0.3:
+        energy_text = "The high energy indicates the GLCM is concentrated in a few patterns, so the image has repeated or uniform structure."
+    elif energy > 0.15:
+        energy_text = "The energy is moderate, meaning the texture has some repeated structure but also a spread of gray-level pairings."
+    else:
+        energy_text = "The low energy shows the gray-level pairings are widely spread, which usually means a more varied texture."
+
+    if correlation > 0.75:
+        correlation_text = "Strong correlation means neighboring intensities are quite predictable from one another."
+    elif correlation > 0.35:
+        correlation_text = "Moderate correlation means neighboring intensities have some relationship, but the pattern is not rigid."
+    else:
+        correlation_text = "Weak correlation means neighboring intensities are less predictable in this direction and distance."
+
+    return [contrast_text, homogeneity_text, energy_text, correlation_text]
+
+
+sample_images = find_sample_images()
+
+st.sidebar.header("Image")
+source_options = []
+if sample_images:
+    source_options.append("Sample image")
+source_options.append("Upload image")
+
+image_source = st.sidebar.radio("Source", source_options, horizontal=True)
+
+selected_image = None
+selected_image_name = None
+
+if image_source == "Sample image":
+    sample_lookup = {path.stem.replace("-", " ").replace("_", " "): path for path in sample_images}
+    selected_image_name = st.sidebar.selectbox("Sample", options=list(sample_lookup.keys()))
+    selected_image = sample_lookup[selected_image_name]
+else:
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload an image",
+        type=["png", "jpg", "jpeg"],
+    )
+    if uploaded_file is not None:
+        selected_image = uploaded_file
+        selected_image_name = uploaded_file.name
 
 st.sidebar.header("GLCM parameters")
 
@@ -43,12 +117,12 @@ angle = st.sidebar.selectbox(
     help="Controls the direction of the neighboring pixel. 0° checks horizontal neighbors, 90° vertical neighbors, and 45°/135° diagonal neighbors."
 )
 
-if uploaded_file is None:
-    st.info("Upload an image to start.")
+if selected_image is None:
+    st.info("Choose a sample image or upload an image to start.")
     st.stop()
 
 try:
-    gray_image = load_image_as_gray(uploaded_file)
+    gray_image = load_image_as_gray(selected_image)
     quantized, glcm_matrix, features = compute_glcm_features(
         gray_image,
         levels=levels,
@@ -62,7 +136,7 @@ try:
 
     with col1:
         st.subheader("Input grayscale image")
-        st.image(gray_image, clamp=True, width="stretch")
+        st.image(gray_image, clamp=True, width="stretch", caption=selected_image_name)
 
     with col2:
         st.subheader("Quantized image")
@@ -88,12 +162,7 @@ try:
 
     st.subheader("Interpretation")
 
-    st.write(
-        "- Higher **contrast** usually means stronger local intensity variation.\n"
-        "- Higher **homogeneity** means neighboring pixels are more similar.\n"
-        "- Higher **energy** means the texture is more uniform or repetitive.\n"
-        "- **Correlation** measures how predictable neighboring intensities are."
-    )
+    st.write(" ".join(describe_texture(features)))
 
 except Exception as e:
     st.error("Something went wrong while processing the image.")
